@@ -11,12 +11,11 @@ import (
 	"sync/atomic"
 )
 
-// The basic proxy type. Implements http.Handler.
+// ProxyHttpServer The basic proxy type. Implements http.Handler.
 type ProxyHttpServer struct {
-	// session variable must be aligned in i386
-	// see http://golang.org/src/pkg/sync/atomic/doc.go#L41
+	// session variable must be aligned in i386 see http://golang.org/src/pkg/sync/atomic/doc.go#L41
 	sess int64
-	// KeepDestinationHeaders indicates the proxy should retain any headers present in the http.Response before proxying
+	// indicates the proxy should retain any headers present in the http.Response before proxying
 	KeepDestinationHeaders bool
 	// setting Verbose to true will log information on each request sent to the proxy
 	Verbose         bool
@@ -26,8 +25,7 @@ type ProxyHttpServer struct {
 	respHandlers    []RespHandler
 	httpsHandlers   []HttpsHandler
 	Tr              *http.Transport
-	// ConnectDial will be used to create TCP connections for CONNECT requests
-	// if nil Tr.Dial will be used
+	// ConnectDial will be used to create TCP connections for CONNECT requests, if nil Tr.Dial will be used
 	ConnectDial func(network string, addr string) (net.Conn, error)
 	CertStore   CertStorage
 	KeepHeader  bool
@@ -123,11 +121,15 @@ func (fw flushWriter) Write(p []byte) (int, error) {
 
 // Standard net/http function. Shouldn't be used directly, http.Serve will use it.
 func (proxy *ProxyHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	//r.Header["X-Forwarded-For"] = w.RemoteAddr()
+	// r.Header["X-Forwarded-For"] = w.RemoteAddr()
 	if r.Method == "CONNECT" {
 		proxy.handleHttps(w, r)
 	} else {
-		ctx := &ProxyCtx{Req: r, Session: atomic.AddInt64(&proxy.sess, 1), Proxy: proxy}
+		ctx := &ProxyCtx{
+			Req:     r,
+			Session: atomic.AddInt64(&proxy.sess, 1),
+			Proxy:   proxy,
+		}
 
 		var err error
 		ctx.Logf("Got request %v %v %v %v", r.URL.Path, r.Host, r.Method, r.URL.String())
@@ -150,7 +152,6 @@ func (proxy *ProxyHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			if err != nil {
 				ctx.Error = err
 				resp = proxy.filterResponse(nil, ctx)
-
 			}
 			if resp != nil {
 				ctx.Logf("Received response %v", resp.Status)

@@ -344,22 +344,22 @@ func copyAndClose(ctx *ProxyCtx, dst, src halfClosable) {
 }
 
 func dialerFromEnv(proxy *ProxyHttpServer) func(network, addr string) (net.Conn, error) {
-	https_proxy := os.Getenv("HTTPS_PROXY")
-	if https_proxy == "" {
-		https_proxy = os.Getenv("https_proxy")
+	httpsProxy := os.Getenv("HTTPS_PROXY")
+	if httpsProxy == "" {
+		httpsProxy = os.Getenv("https_proxy")
 	}
-	if https_proxy == "" {
+	if httpsProxy == "" {
 		return nil
 	}
-	return proxy.NewConnectDialToProxy(https_proxy)
+	return proxy.NewConnectDialToProxy(httpsProxy)
 }
 
-func (proxy *ProxyHttpServer) NewConnectDialToProxy(https_proxy string) func(network, addr string) (net.Conn, error) {
-	return proxy.NewConnectDialToProxyWithHandler(https_proxy, nil)
+func (proxy *ProxyHttpServer) NewConnectDialToProxy(httpsProxy string) func(network, addr string) (net.Conn, error) {
+	return proxy.NewConnectDialToProxyWithHandler(httpsProxy, nil)
 }
 
-func (proxy *ProxyHttpServer) NewConnectDialToProxyWithHandler(https_proxy string, connectReqHandler func(req *http.Request)) func(network, addr string) (net.Conn, error) {
-	u, err := url.Parse(https_proxy)
+func (proxy *ProxyHttpServer) NewConnectDialToProxyWithHandler(httpsProxy string, connectReqHandler func(req *http.Request)) func(network, addr string) (net.Conn, error) {
+	u, err := url.Parse(httpsProxy)
 	if err != nil {
 		return nil
 	}
